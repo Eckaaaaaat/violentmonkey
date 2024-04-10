@@ -29,7 +29,7 @@
             res();
           }, 200);
         }
-      }, onerror: rej , onabort: rej, ontimeout: rej });
+      }, onload: res, onerror: rej , onabort: rej, ontimeout: rej });
     });
 
     let abort = false;
