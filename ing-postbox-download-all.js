@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        Download documents from postbox - ing.de
 // @namespace   https://github.com/ja-ka/violentmonkey
-// @match       https://banking.ing.de/app/postbox/postbox
-// @match       https://banking.ing.de/app/postbox/postbox_archiv
+// @match       https://banking.ing.de/app/postbox/postbox?*
+// @match       https://banking.ing.de/app/postbox/postbox_archiv?*
 // @grant       GM_download
 // @grant       GM_getValue
 // @grant       GM_setValue
