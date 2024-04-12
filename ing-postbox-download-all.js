@@ -49,8 +49,8 @@
     let abort = false;
     let loading = false;
     const FILENAME_TEMPLATE_KEY = "FILENAME_TEMPLATE";
-    let filenameTemplate = GM_getValue(FILENAME_TEMPLATE_KEY, "DD.MM.YYYY_ART_BETREFF");
-    
+    let filenameTemplate = GM_getValue(FILENAME_TEMPLATE_KEY, "YYYY-MM-DD_ART_BETREFF");
+
     const addButton = (name, onClick) => {
       $('.account-filters').after(VM.createElement("button", {
         className: "content-header__button gap-left-1",
@@ -78,7 +78,7 @@
       if (!['DD', 'MM', 'YYYY', 'ART', 'BETREFF'].every((curr) => {
         return newFilenameTemplate.includes(curr);
       })) {
-        alert('Bitte gib ein Template nach folgendem Muster ein: DD.MM.YYYY_ART_BETREFF');
+        alert('Bitte gib ein Template nach folgendem Muster ein: YYYY-MM-DD_ART_BETREFF');
         return;
       }
       
