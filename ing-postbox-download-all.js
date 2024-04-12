@@ -111,7 +111,7 @@
                   return $(this).text().trim() !== "|";
                 })
                 .map(function() {
-                  return $(this).text().trim().replace(/[^A-Za-z0-9]/g, '_').replace('/\n/g', '');
+                  return escapeFileName($(this).text().trim());
                 })
                 .get();
 
@@ -153,6 +153,24 @@
 
       abort = false;
       loading = false;
-    });    
-  })
+    });
+
+
+    const escapeFileName = (name) => {
+      const tranlations = [
+        { from: 'ä', to: 'ae' },
+        { from: 'ö', to: 'oe' },
+        { from: 'ü', to: 'ue' },
+        { from: 'Ä', to: 'Ae' },
+        { from: 'Ö', to: 'Oe' },
+        { from: 'Ü', to: 'Ue' },
+        { from: 'ß', to: 'sz' },
+        { from: 'ẞ', to: 'Sz' },
+        { from: /[^A-Za-z0-9]/g, to: '_' },
+        { from: /\n/g, to: '' },
+      ];
+
+      return tranlations.reduce((accumulator, translation) => accumulator.replaceAll(translation.from, translation.to), name);
+    };
+  });
 })();
