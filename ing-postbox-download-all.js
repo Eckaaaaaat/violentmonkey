@@ -6,10 +6,16 @@
 // @grant       GM_download
 // @grant       GM_getValue
 // @grant       GM_setValue
+//
+//              https://github.com/Stuk/jszip/issues/909 and https://github.com/Tampermonkey/tampermonkey/issues/1600
+// @require     data:application/javascript,window.setImmediate%20%3D%20window.setImmediate%20%7C%7C%20((f%2C%20...args)%20%3D%3E%20window.setTimeout(()%20%3D%3E%20f(args)%2C%200))%3B
 // @require     https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js
 // @require     https://cdn.jsdelivr.net/combine/npm/@violentmonkey/dom@1,npm/@violentmonkey/ui@0.5
+// @require     https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.js
+// @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js
+//
 // @version     1.4
-// @author      Jascha Kanngießer
+// @author      Jascha Kanngießer, Alexander Eckert
 // @description Places a button "Alle herunterladen" next to "Alle archivieren" and downloads all documents visible on the page.
 // @icon        https://www.ing.de/favicon-32x32.png
 // @run-at      document-end
@@ -19,18 +25,26 @@
 // ==/UserScript==
 
 (function () {
-  $(document).ready(function () {
-    const NAME = "Alle herunterladen";    
+  $(document).ready(async () => {
+    const NAME = "Alle herunterladen";
 
-    const download = async (url, name) => new Promise((res, rej) => {
-      GM_download({ url, name, onprogress: (progress) => {
-        if (progress.status === 200) {
-          setTimeout(() => {
-            res();
-          }, 200);
-        }
-      }, onload: res, onerror: rej , onabort: rej, ontimeout: rej });
-    });
+    const download = async (url, name, zip) => {
+      await new Promise((r) => setTimeout(r, 100))
+      return new Promise((resolve, reject) => {
+        $.ajax({
+          url: url,
+          type: "GET",
+          headers:{'Content-Type':'application/pdf'},
+          cache:false,
+          xhrFields:{ responseType: 'blob' },
+          success: (content) => {
+              zip.file(name, content, {binary: true});
+              resolve();
+          },
+          error: (response) => reject(response)
+        })
+      })
+    };
 
     let abort = false;
     let loading = false;
@@ -101,33 +115,44 @@
                 })
                 .get();
 
+              const [day, month, year] = nameSegments.shift().split('_');
+              const [type, subject] = nameSegments;
               const name = `${filenameTemplate
-                .replace('DD', nameSegments[0].split('_')[0])
-                .replace('MM', nameSegments[0].split('_')[1])
-                .replace('YYYY', nameSegments[0].split('_')[2])
-                .replace('ART', nameSegments[1])
-                .replace('BETREFF', nameSegments[2])}.pdf`;
+                .replace('DD', day)
+                .replace('MM', month)
+                .replace('YYYY', year)
+                .replace('ART', type)
+                .replace('BETREFF', subject)}.pdf`;
+              const date = `${year}-${month}-${day}`
 
               const url = "https://banking.ing.de/app/postbox" + $(this).find('a:contains(Download)').first().attr('href').substring(1);
-              return { url, name };
+              return { url, name, date };
             })
             .get();
+        const dates = downloads.map((d) => d.date).sort()
 
+        const zip = new JSZip()
         for (const d of downloads) {
           if (abort) {
             break;  
           }
 
           setProgress();
-          await download(d.url, d.name);
+          await download(d.url, d.name, zip);
         }
+
+        this.innerHTML = 'Erstelle ZIP-Datei…'
+        zip.generateAsync({ type: "blob" }).then((content) => {
+          saveAs(content, `Alle Dokumente von ${dates[0]} bis ${dates.at(-1)}`);
+          this.innerHTML = NAME
+        })
       } catch (err) {
         alert("Es ist ein Fehler aufgetreten.", err);
+        this.innerHTML = NAME;
       }
 
       abort = false;
       loading = false;
-      this.innerHTML = NAME;
     });    
   })
 })();
